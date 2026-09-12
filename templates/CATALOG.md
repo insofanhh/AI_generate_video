@@ -1,8 +1,8 @@
 # Template Catalog (HyperFrames, renderer: "hyperframes")
 
 Each scene in a template-mode `script.json` names a `templateId` below and fills
-`inputs` with the listed slots. The template owns all visual design; you only
-write text. Keep text SHORT — these are poster layouts, not paragraphs.
+`inputs` with the listed slots. The template owns the visual design. Supply concise text and relevant source images.
+Default for news: `frame-news` for hook, body, and outro.
 
 Render aspect is set once per script (`"aspect": "9:16"` for TikTok/Shorts).
 
@@ -13,6 +13,43 @@ Render aspect is set once per script (`"aspect": "9:16"` for TikTok/Shorts).
 > (e.g. `hero` of build-minimal).
 
 ---
+
+
+## frame-news — mặc định cho bản tin
+
+Bố cục thời sự tham khảo [Trạm AI](https://tramai.net/templates/thoi-su):
+ảnh nổi bật, thanh nguồn, ngày đăng, tiêu đề, tóm tắt và chú thích. Code được viết mới.
+Hỗ trợ composition gốc **9:16 / 16:9 / 1:1**; thời lượng 8 giây, chuyển động nhẹ.
+
+| Slot | Giới hạn | Ý nghĩa |
+| --- | --- | --- |
+| `theme` | `slide`, `light`, `dark`, `modern` | Mặc định `slide`: ảnh sát lề, thanh đỏ, nền trắng |
+| `headline` | 120 ký tự | Tiêu đề; mặc định metadata.title |
+| `summary` | 240 ký tự | Một đoạn tóm tắt ngắn |
+| `category` | 32 ký tự | Chuyên mục, mặc định Thời sự |
+| `channel` | 40 ký tự | Mặc định metadata.channel |
+| `date` | 32 ký tự | Mặc định metadata.publishedAt; không biết thì bỏ trống |
+| `source` | 100 ký tự | Domain nguồn, mặc định metadata.source.domain |
+| `images` | 0–6 `{src, alt?, credit?}` | URL HTTP(S), data URI hoặc file tương đối với script.json |
+| `caption` | 160 ký tự | Chú thích tĩnh theo cảnh, không đồng bộ từng từ |
+| `section` | 40 ký tự | Nhãn chân trang; mặc định số thứ tự cảnh |
+
+`alt` ≤180, `credit` ≤100 ký tự. Ảnh có thể thêm `fit: "contain"` để giữ toàn bộ
+khung ảnh (hữu ích cho bản đồ, ảnh vệ tinh); mặc định `cover` lấp đầy khung.
+Không truyền `images` thì dùng metadata.source.image;
+`images: []` chủ động bỏ ảnh. Ảnh lỗi tải khiến pipeline báo lỗi cụ thể để sửa nguồn;
+khung xem trước có trạng thái thiếu ảnh. Không gán ảnh minh họa thành ảnh sự kiện.
+Các ảnh chia đều trong 8 giây đầu; clip dài hơn giữ hình cuối theo pipeline hiện tại.
+Chữ dài tự giảm cỡ để vừa khung. Tin thời sự mặc định tắt SFX; scene.sfx ghi đè được.
+
+Xem thử: `npm run news:preview`, mở http://127.0.0.1:4173.
+Kịch bản mẫu: [`examples/news/script.json`](../examples/news/script.json).
+
+---
+
+## Legacy templates — dùng khi chọn rõ
+
+Các mẫu bên dưới được giữ để chạy lại script cũ; không còn là lựa chọn mặc định.
 
 ## frame-bold-poster
 
@@ -105,7 +142,7 @@ beat (variety vs the white/paper templates).
 
 ## frame-logo-outro
 
-**Role:** outro / brand end-card (**default outro**). Deep-violet radial canvas,
+**Role:** outro / brand end-card (legacy outro). Deep-violet radial canvas,
 a glowing segmented logo mark that assembles in, brand name with a shimmer
 sweep, tagline, and a footer URL.
 **Best for:** the final scene (`type: "outro"`) — a polished brand sign-off.
@@ -120,7 +157,7 @@ sweep, tagline, and a footer URL.
 
 ## frame-liquid-bg-hero
 
-**Role:** hook / hero (**default hook**). "Aurora Violet" — deep-indigo canvas
+**Role:** hook / hero (legacy hook). "Aurora Violet" — deep-indigo canvas
 with large soft floating colour blobs + faint grid; a centred white headline,
 subheadline and a rounded CTA pill.
 **Best for:** the opening hook (`type: "hook"`) — a modern, premium intro.

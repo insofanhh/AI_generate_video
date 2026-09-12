@@ -28,7 +28,7 @@ export async function getDurationSec(path: string): Promise<number> {
         "-v", "error",
         "-count_packets",
         "-select_streams", "a:0",
-        "-show_entries", "stream=nb_read_packets,sample_rate",
+        "-show_entries", "stream=codec_name,nb_read_packets,sample_rate",
         "-of", "json",
         path,
       ]);
@@ -36,7 +36,9 @@ export async function getDurationSec(path: string): Promise<number> {
       const stream = data?.streams?.[0];
       const packets = parseInt(stream?.nb_read_packets ?? "", 10);
       const sampleRate = parseInt(stream?.sample_rate ?? "", 10);
-      if (packets > 0 && sampleRate > 0) {
+      // Gradio may return WAV bytes saved under a .mp3 filename. Packet sizes
+      // for PCM are unrelated to MPEG frames; use the container duration below.
+      if (stream?.codec_name === "mp3" && packets > 0 && sampleRate > 0) {
         // MPEG-1 L3 (32/44.1/48 kHz): 1152 samples/frame
         // MPEG-2/2.5 L3 (≤24 kHz): 576 samples/frame
         const samplesPerFrame = sampleRate >= 32000 ? 1152 : 576;

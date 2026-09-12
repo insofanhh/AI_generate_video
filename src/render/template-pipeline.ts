@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { createHash } from "node:crypto";
 import pLimit from "p-limit";
 import { TemplateScriptSchema, type TemplateScript } from "./template-script-schema.js";
 import { loadConfig } from "../config.js";
@@ -15,6 +16,7 @@ import { indexSfxLibrary, pickSfxForScene, defaultPlayback } from "../assets/sfx
 import { composeTemplate } from "./template-composer.js";
 import { fitClipToDuration, concatVideos, muxAudioOntoVideo } from "./video-tools.js";
 import { log } from "../utils/logger.js";
+import { embedNewsImages, resolveNewsInputs } from "./news-inputs.js";
 
 const TOTAL_STEPS = 8;
 const SCENE_GAP_SEC = 0.3;
@@ -37,6 +39,10 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
   log.step(1, TOTAL_STEPS, `Load + validate template script (TTS: ${cfg.ttsProvider})`);
   const raw = JSON.parse(await readFile(scriptPath, "utf8"));
   const script: TemplateScript = TemplateScriptSchema.parse(raw);
+  // Validate news slots before spending time on TTS or rendering.
+  const sceneInputs = script.scenes.map((scene, index) =>
+    scene.templateId === "frame-news" ? resolveNewsInputs(script, scene, index) : scene.inputs,
+  );
 
   // STEP 2 — script.txt for CapCut
   log.step(2, TOTAL_STEPS, "Write script.txt");
@@ -48,12 +54,31 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
   const limit = pLimit(cfg.ttsConcurrency);
   const voiceDir = join(outputDir, "voice");
   await mkdir(voiceDir, { recursive: true });
+  log.info("  Prepare one shared narrator for all scenes");
+  const referencePath = script.voice.referenceAudio
+    ? resolve(outputDir, script.voice.referenceAudio)
+    : join(voiceDir, "narrator-reference.wav");
+  const referenceTextPath = join(voiceDir, "narrator-reference.txt");
+  const referenceText = script.voice.referenceText ?? (
+    existsSync(referenceTextPath) ? await readFile(referenceTextPath, "utf8") : script.scenes[0].voiceText
+  );
+  const narratorId = await ttsClient.prepareVoice?.({
+    audioPath: referencePath, text: referenceText, speed: script.voice.speed,
+    explicitReference: !!script.voice.referenceAudio,
+  }) ?? "server-default";
+  await writeFile(referenceTextPath, referenceText, "utf8");
   const sceneAudio = await Promise.all(
     script.scenes.map((scene) =>
       limit(async () => {
         const out = join(voiceDir, `scene-${scene.id}.mp3`);
         const srtOut = join(voiceDir, `scene-${scene.id}.srt`);
-        if (existsSync(out)) {
+        const cachePath = `${out}.sha256`;
+        const signature = createHash("sha256").update(JSON.stringify({
+          version: "shared-narrator-v1", narratorId, text: scene.voiceText,
+          endpoint: cfg.omnivoiceEndpoint, speed: script.voice.speed,
+        })).digest("hex");
+        const cachedSignature = existsSync(cachePath) ? await readFile(cachePath, "utf8") : "";
+        if (existsSync(out) && cachedSignature === signature) {
           const dur = await getDurationSec(out);
           log.info(`  scene ${scene.id}: REUSE mp3 (${dur.toFixed(2)}s)`);
           return { id: scene.id, path: out, durationSec: dur };
@@ -61,6 +86,7 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
         log.info(`  TTS scene ${scene.id} (${scene.voiceText.length} chars)...`);
         await ttsClient.generate(scene.voiceText, out, srtOut);
         const dur = await getDurationSec(out);
+        await writeFile(cachePath, signature, "utf8");
         log.info(`  scene ${scene.id}: ${dur.toFixed(2)}s`);
         return { id: scene.id, path: out, durationSec: dur };
       }),
@@ -93,6 +119,8 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
       if (existsSync(p)) sfxList.push({ path: p, startSec: startSec + scene.sfx.startOffsetSec, volume: scene.sfx.volume });
       continue;
     }
+    // News defaults to clean narration. Explicit scene.sfx still takes precedence.
+    if (scene.templateId === "frame-news") continue;
     if (Object.keys(sfxIndex).length === 0) continue;
     const picked = pickSfxForScene({
       voiceText: scene.voiceText,
@@ -128,7 +156,9 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
     } else {
       await composeTemplate({
         templateId: scene.templateId,
-        inputs: scene.inputs,
+        inputs: scene.templateId === "frame-news"
+          ? await embedNewsImages(resolveNewsInputs(script, scene, i), outputDir)
+          : sceneInputs[i],
         aspect: script.aspect,
         outputPath: rawClip,
         fps: RENDER_FPS,

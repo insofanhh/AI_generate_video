@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "renderer": "hyperframes",
+  "aspect": "9:16",
+  "metadata": {
+    "title": "Không gian xanh và nhịp sống đô thị",
+    "channel": "BẢN TIN",
+    "source": { "url": "", "domain": "local", "image": null }
+  },
+  "voice": { "provider": "omnivoice", "speed": 1 },
+  "scenes": [
+    {
+      "id": "hook", "type": "hook", "templateId": "frame-news",
+      "voiceText": "Đây là bản tin minh họa giao diện. Chủ đề hôm nay là không gian xanh và nhịp sống đô thị.",
+      "inputs": {
+        "theme": "slide", "category": "Đô thị",
+        "headline": "Diện mạo mới từ những không gian xanh giữa lòng đô thị",
+        "summary": "Kết nối không gian công cộng với nhịp sống hàng ngày của người dân.",
+        "section": "Nội dung minh họa",
+        "images": [{ "src": "../../templates/frame-news/assets/city-demo.svg", "alt": "Đồ họa công viên và đường chân trời đô thị", "credit": "Đồ họa minh họa · Không phải ảnh sự kiện" }]
+      }
+    },
+    {
+      "id": "body-1", "type": "body", "templateId": "frame-news",
+      "voiceText": "Khung ảnh lớn giúp người xem theo dõi câu chuyện. Tiêu đề, nguồn ảnh và nội dung tóm tắt được trình bày rõ ràng trên cùng một khuôn hình.",
+      "inputs": {
+        "theme": "slide", "category": "Đô thị", "headline": "Thêm không gian kết nối cộng đồng",
+        "summary": "Thay nội dung minh họa bằng thông tin và ảnh đã kiểm chứng từ bài viết nguồn.",
+        "caption": "Chú thích ngắn theo cảnh; không phải phụ đề đồng bộ giọng đọc.",
+        "section": "Nội dung minh họa",
+        "images": [{ "src": "../../templates/frame-news/assets/city-demo.svg", "credit": "Đồ họa minh họa · Không phải ảnh sự kiện" }]
+      }
+    },
+    {
+      "id": "outro", "type": "outro", "templateId": "frame-news",
+      "voiceText": "Cảm ơn bạn đã theo dõi. Hẹn gặp lại trong bản tin tiếp theo.",
+      "inputs": {
+        "theme": "slide", "category": "Điểm tin", "headline": "Hẹn gặp lại trong bản tin tiếp theo",
+        "summary": "Theo dõi để cập nhật những câu chuyện mới mỗi ngày.",
+        "section": "Kết thúc bản tin",
+        "images": [{ "src": "../../templates/frame-news/assets/city-demo.svg", "credit": "Đồ họa minh họa · Không phải ảnh sự kiện" }]
+      }
+    }
+  ]
+}

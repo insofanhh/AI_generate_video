@@ -29,6 +29,53 @@ Một câu lệnh, không cần dựng phim, chạy lại bao nhiêu lần cũng
 
 </div>
 
+
+## 📰 Template thời sự mới (mặc định)
+
+`frame-news` dùng ảnh lớn, thanh nguồn, ngày đăng và tiêu đề. Chọn `theme`:
+`slide` (mặc định), `light`, `dark` hoặc `modern`. Hỗ trợ 9:16, 16:9 và 1:1.
+Cả hook, body và outro dùng chung phong cách; các template cũ vẫn chạy được.
+
+```bash
+npm run news:preview
+```
+
+Xuất clip mẫu 8 giây có ảnh minh họa, không cần TTS: `npm run news:render`.
+Kết quả: `output/news-preview.mp4` (không có âm thanh).
+
+**Một giọng xuyên suốt:** với OmniVoice Gradio, pipeline tạo một mẫu giọng tổng hợp
+và dùng cùng mẫu cho mọi cảnh. Mẫu được lưu tại `voice/narrator-reference.wav`.
+Để dùng một mẫu có sẵn, thêm `referenceAudio` và `referenceText` vào `voice`:
+
+```json
+"voice": {
+  "provider": "omnivoice",
+  "speed": 1,
+  "referenceAudio": "narrator-reference.wav",
+  "referenceText": "Lời nói chính xác trong file giọng mẫu."
+}
+```
+
+Đường dẫn mẫu tính từ `script.json`. Cache giọng được kiểm tra theo lời đọc và mẫu
+giọng; bản audio cũ tạo bằng giọng ngẫu nhiên sẽ không được dùng lại. Nếu sửa hình
+hoặc chữ hiển thị, xuất vào thư mục mới vì clip hình vẫn được lưu theo tên cảnh.
+
+
+Mở [bản xem trước](http://127.0.0.1:4173), đổi theme và tỷ lệ ngay trên trang.
+Để thử pipeline với [kịch bản minh họa](examples/news/script.json), sao chép cả
+thư mục `examples/news` thành `output/news-demo` (giữ nguyên độ sâu để đường dẫn ảnh đúng), rồi chạy:
+
+```bash
+npm run pipeline -- output/news-demo/script.json
+```
+
+Cần OmniVoice, FFmpeg và Chromium để xuất video. Ví dụ là nội dung minh họa thiết kế.
+Ảnh từ `inputs.images` hoặc `metadata.source.image` được nhúng trước khi render.
+Ngày đăng lấy từ `metadata.publishedAt`; không có thì bỏ trống. `caption` là chú thích
+tĩnh theo cảnh, còn phụ đề theo lời đọc dùng `script.txt` với CapCut.
+Slot đầy đủ: [catalog](templates/CATALOG.md#frame-news--mặc-định-cho-bản-tin).
+
+
 ---
 
 <div align="center">
@@ -99,8 +146,8 @@ Setup &nbsp;·&nbsp; Tổng hợp email &nbsp;·&nbsp; Lên lịch chạy tự �
 > 📺 **Hướng dẫn chi tiết:** [Xem video hướng dẫn trên YouTube](https://www.youtube.com/watch?v=V08-8KLmbnA)
 
 ```bash
-git clone https://github.com/huytranvan2010/AI-auto-generate-video.git
-cd AI-auto-generate-video
+git clone https://github.com/insofanhh/AI_generate_video.git
+cd AI_generate_video
 npm install
 # chạy server OmniVoice ở máy bạn, rồi tạo video
 ```
@@ -249,57 +296,49 @@ npm run pipeline -- output/<slug>/script.json
 
 ```json
 {
-    "version": "1.0",
-    "renderer": "hyperframes",
-    "aspect": "9:16",
-    "metadata": {
-        "title": "Apple ra mắt iPhone 17 camera 200MP",
-        "source": {
-            "url": "https://...",
-            "domain": "aicodingvn.vercel.app",
-            "image": null
-        },
-        "channel": "AI Coding"
+  "version": "1.0",
+  "renderer": "hyperframes",
+  "aspect": "9:16",
+  "metadata": {
+    "title": "Không gian xanh và nhịp sống đô thị",
+    "channel": "BẢN TIN",
+    "source": { "url": "", "domain": "local", "image": null }
+  },
+  "voice": { "provider": "omnivoice", "speed": 1 },
+  "scenes": [
+    {
+      "id": "hook", "type": "hook", "templateId": "frame-news",
+      "voiceText": "Đây là bản tin minh họa giao diện. Chủ đề hôm nay là không gian xanh và nhịp sống đô thị.",
+      "inputs": {
+        "theme": "slide", "category": "Đô thị",
+        "headline": "Diện mạo mới từ những không gian xanh giữa lòng đô thị",
+        "summary": "Kết nối không gian công cộng với nhịp sống hàng ngày của người dân.",
+        "section": "Nội dung minh họa",
+        "images": [{ "src": "../../templates/frame-news/assets/city-demo.svg", "alt": "Đồ họa công viên và đường chân trời đô thị", "credit": "Đồ họa minh họa · Không phải ảnh sự kiện" }]
+      }
     },
-    "voice": { "provider": "omnivoice", "speed": 1.0 },
-    "scenes": [
-        {
-            "id": "hook",
-            "type": "hook",
-            "voiceText": "Apple vừa ra mắt iPhone mười bảy với camera hai trăm megapixel.",
-            "templateId": "frame-liquid-bg-hero",
-            "inputs": {
-                "kicker": "🔥 Tin nóng",
-                "headline": "iPhone 17",
-                "subheadline": "Camera 200MP",
-                "cta": "Theo dõi ngay",
-                "brand": "AI Coding"
-            }
-        },
-        {
-            "id": "body-1",
-            "type": "body",
-            "voiceText": "Cảm biến mới thu nhiều ánh sáng hơn, ảnh đêm sắc nét hơn rõ rệt.",
-            "templateId": "frame-pentagram-stat",
-            "inputs": {
-                "label": "Camera",
-                "headline": "200MP",
-                "subtitle": "Cảm biến lớn nhất từ trước tới nay",
-                "anchor": "200"
-            }
-        },
-        {
-            "id": "outro",
-            "type": "outro",
-            "voiceText": "Theo dõi AI Coding để xem bản tin công nghệ mới mỗi ngày.",
-            "templateId": "frame-logo-outro",
-            "inputs": {
-                "brand_name": "AI Coding",
-                "tagline": "Tin công nghệ mỗi ngày",
-                "primary_url": "https://aicodingvn.vercel.app/"
-            }
-        }
-    ]
+    {
+      "id": "body-1", "type": "body", "templateId": "frame-news",
+      "voiceText": "Khung ảnh lớn giúp người xem theo dõi câu chuyện. Tiêu đề, nguồn ảnh và nội dung tóm tắt được trình bày rõ ràng trên cùng một khuôn hình.",
+      "inputs": {
+        "theme": "slide", "category": "Đô thị", "headline": "Thêm không gian kết nối cộng đồng",
+        "summary": "Thay nội dung minh họa bằng thông tin và ảnh đã kiểm chứng từ bài viết nguồn.",
+        "caption": "Chú thích ngắn theo cảnh; không phải phụ đề đồng bộ giọng đọc.",
+        "section": "Nội dung minh họa",
+        "images": [{ "src": "../../templates/frame-news/assets/city-demo.svg", "credit": "Đồ họa minh họa · Không phải ảnh sự kiện" }]
+      }
+    },
+    {
+      "id": "outro", "type": "outro", "templateId": "frame-news",
+      "voiceText": "Cảm ơn bạn đã theo dõi. Hẹn gặp lại trong bản tin tiếp theo.",
+      "inputs": {
+        "theme": "slide", "category": "Điểm tin", "headline": "Hẹn gặp lại trong bản tin tiếp theo",
+        "summary": "Theo dõi để cập nhật những câu chuyện mới mỗi ngày.",
+        "section": "Kết thúc bản tin",
+        "images": [{ "src": "../../templates/frame-news/assets/city-demo.svg", "credit": "Đồ họa minh họa · Không phải ảnh sự kiện" }]
+      }
+    }
+  ]
 }
 ```
 
@@ -345,6 +384,7 @@ Danh sách slot đầy đủ xem ở [`templates/CATALOG.md`](templates/CATALOG.
 
 | Template                    | Vai trò | Hợp với                                                |
 | --------------------------- | :-----: | ------------------------------------------------------ |
+| `frame-news` | all | **Mặc định** — ảnh slide thời sự, 4 theme, 3 tỷ lệ |
 | `frame-liquid-bg-hero`      |  hook   | Mở đầu — hero aurora với headline + nút CTA            |
 | `frame-vignelli`            |  body   | Một con số ấn tượng — nền than tối + accent đỏ         |
 | `frame-pentagram-stat`      |  body   | Một số/benchmark — nền tối neon + biểu đồ cột          |
@@ -354,7 +394,7 @@ Danh sách slot đầy đủ xem ở [`templates/CATALOG.md`](templates/CATALOG.
 | `frame-glitch-title`        |  body   | Tin nóng / công nghệ — glitch RGB-split kiểu cyberpunk |
 | `frame-aicoding-list`       |  body   | **Danh sách** 2–5 mục (icon + tag mức độ)              |
 | `frame-aicoding-comparison` |  body   | **So sánh** hai thứ đối đầu                            |
-| `frame-logo-outro`          |  outro  | End-card mặc định — logo glow + tên + tagline + URL    |
+| `frame-logo-outro`          |  outro  | End-card tùy chọn — logo glow + tên + tagline + URL    |
 | `frame-statement-outro`     |  outro  | Outro thay thế — card đỏ trên nền giấy                 |
 
 > **Thêm template của bạn:** tạo `templates/<id>/` với `index.html`, `compositions/portrait.html`,
@@ -426,11 +466,11 @@ Nếu dự án giúp bạn tiết kiệm thời gian, bạn có thể:
 
 ## ⭐ Lịch sử Star
 
-<a href="https://www.star-history.com/?type=date&repos=huytranvan2010%2FAI-auto-generate-video">
+<a href="https://www.star-history.com/?type=date&repos=insofanhh%2FAI_generate_video">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=huytranvan2010/AI-auto-generate-video&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=huytranvan2010/AI-auto-generate-video&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=huytranvan2010/AI-auto-generate-video&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=insofanhh/AI_generate_video&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=insofanhh/AI_generate_video&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=insofanhh/AI_generate_video&type=date&legend=top-left" />
  </picture>
 </a>
 

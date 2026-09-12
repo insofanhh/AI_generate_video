@@ -40,10 +40,17 @@ export const TemplateScriptSchema = z.object({
       image: z.string().url().nullable(),
     }),
     channel: z.string().min(1),
+    /** Display date from the article; omit when unknown (never invent today's date). */
+    publishedAt: z.string().max(32).optional(),
   }),
   voice: z.object({
     provider: z.literal("omnivoice").default("omnivoice"),
     speed: z.number().min(0.5).max(2.0),
+    /** Local reference audio, relative to script.json, to keep one narrator. */
+    referenceAudio: z.string().min(1).optional(),
+    referenceText: z.string().min(1).optional(),
+  }).refine((v) => !v.referenceAudio || !!v.referenceText, {
+    message: "voice.referenceText is required with voice.referenceAudio",
   }),
   /** Output aspect for every scene (templates render a matching composition). */
   aspect: z.enum(["9:16", "16:9", "1:1"]).default("9:16"),

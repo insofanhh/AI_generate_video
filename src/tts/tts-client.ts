@@ -3,6 +3,13 @@
  * is kept so the pipeline orchestration stays decoupled from the implementation.
  */
 export interface TtsClient {
+  /** Prepare a shared synthetic narrator before generating any scene. */
+  prepareVoice?(options: {
+    audioPath: string;
+    text: string;
+    speed: number;
+    explicitReference: boolean;
+  }): Promise<string>;
   /**
    * Generate speech audio for `text` and write to `audioOutPath` (mp3 or wav).
    * If `srtOutPath` is provided AND the provider supports subtitles,

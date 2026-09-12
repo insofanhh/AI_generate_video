@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 import { getDurationSec, concatWithSilence } from "./audio-tools.js";
 
 let tmp: string;
@@ -9,6 +10,17 @@ beforeEach(() => { tmp = mkdtempSync(join(tmpdir(), "aud-")); });
 afterEach(() => { rmSync(tmp, { recursive: true, force: true }); });
 
 describe("getDurationSec", () => {
+  it("measures WAV audio correctly even when OmniVoice saves it with an mp3 extension", async () => {
+    const out = join(tmp, "gradio-response.mp3");
+    const converted = spawnSync("ffmpeg", [
+      "-y", "-i", "tests/fixtures/sample-audio-1.mp3",
+      "-ar", "24000", "-c:a", "pcm_s16le", "-f", "wav", out,
+    ]);
+    expect(converted.status).toBe(0);
+    const duration = await getDurationSec(out);
+    expect(duration).toBeGreaterThan(1.9);
+    expect(duration).toBeLessThan(2.2);
+  });
   it("returns ~2s for sample-audio-1.mp3", async () => {
     const d = await getDurationSec("tests/fixtures/sample-audio-1.mp3");
     expect(d).toBeGreaterThan(1.9);

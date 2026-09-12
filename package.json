@@ -9,6 +9,8 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "pipeline": "tsx src/cli.ts",
+    "news:preview": "node scripts/preview-news.mjs",
+    "news:render": "tsx scripts/render-news-preview.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "sfx:download": "tsx scripts/download-sfx.ts",
@@ -40,5 +42,9 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/insofanhh/AI_generate_video.git"
   }
 }
