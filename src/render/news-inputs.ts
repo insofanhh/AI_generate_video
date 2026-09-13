@@ -5,6 +5,7 @@ import { extname, resolve } from "node:path";
 import type { TemplateSceneType, TemplateScript } from "./template-script-schema.js";
 
 export const NewsInputsSchema = z.object({
+  locale: z.enum(["vi", "en"]).default("vi"),
   theme: z.enum(["slide", "light", "dark", "modern"]).default("slide"),
   category: z.string().max(32).default("Thời sự"),
   headline: z.string().min(1).max(120),
@@ -23,13 +24,18 @@ export const NewsInputsSchema = z.object({
 });
 
 export function resolveNewsInputs(script: TemplateScript, scene: TemplateSceneType, index: number) {
+  const english = script.voice.language === "English";
   return NewsInputsSchema.parse({
+    locale: english ? "en" : "vi",
+    category: english ? "World news" : "Thời sự",
     headline: script.metadata.title,
     channel: script.metadata.channel,
     source: script.metadata.source.domain === "local" ? "" : script.metadata.source.domain,
     date: script.metadata.publishedAt ?? "",
     images: script.metadata.source.image ? [{ src: script.metadata.source.image }] : [],
-    section: scene.type === "outro" ? "Kết thúc bản tin" : `Bản tin / ${String(index + 1).padStart(2, "0")}`,
+    section: scene.type === "outro"
+      ? (english ? "End of bulletin" : "Kết thúc bản tin")
+      : `${english ? "News" : "Bản tin"} / ${String(index + 1).padStart(2, "0")}`,
     ...scene.inputs,
   });
 }

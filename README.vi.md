@@ -32,6 +32,47 @@ Một câu lệnh, không cần dựng phim, chạy lại bao nhiêu lần cũng
 
 ## 📰 Template thời sự mới (mặc định)
 
+### Newsroom Studio — tạo video trực tiếp trên web
+
+**Đổi template:** dùng **Bộ giao diện** hoặc **Template mặc định** bên trên khung
+xem trước để chọn trong 12 mẫu sẵn có. **Áp dụng mọi cảnh** đưa cả video về mẫu
+đã chọn. Ở bước **Kịch bản & ảnh**, mỗi cảnh có **Template của cảnh** để phối hợp
+nhiều mẫu trong một video; chọn **Theo mẫu mặc định** để bỏ lựa chọn riêng.
+Các ô **Nội dung riêng của template** cho phép sửa tiêu đề ngắn, từ khóa, số liệu,
+danh sách hoặc hai cột so sánh mà không thay đổi lời đọc. Studio không tự điền
+số liệu minh họa vào bản tin. Mẫu chữ/đồ họa giữ ảnh trong thư viện nhưng không
+hiển thị ảnh; chỉ mẫu thời sự có ảnh và khung 1:1. Tất cả 12 mẫu hỗ trợ 9:16, 16:9.
+
+Chạy `npm install` rồi `npm run dev`, mở **http://127.0.0.1:4173**.
+Studio có bốn bước: nhập link bài viết (hoặc dán nội dung), tạo/chỉnh kịch bản
+bằng AI và gán ảnh cho từng cảnh, chọn giọng OmniVoice và nghe thử, rồi xuất video.
+Bạn có thể tải thêm JPG/PNG/WebP/GIF và audio mẫu WAV/MP3/M4A/OGG (tối đa 20 MB/tệp).
+
+- **AI:** mặc định dùng Codex CLI đang đăng nhập (`codex login`). Nếu không có
+  lệnh `codex` trong PATH, đặt `CODEX_BIN` trong `.env.local` đến executable.
+  Mục **Cấu hình AI** cho phép đổi sang API tương thích OpenAI Chat Completions,
+  nhập base URL, model và key. API cần hỗ trợ JSON object output.
+- **Giọng đọc:** `OMNIVOICE_ENDPOINT` trong `.env.local` trỏ tới OmniVoice Gradio
+  (máy hiện tại: `http://127.0.0.1:8001`). Hỗ trợ Voice Design/Clone, audio mẫu,
+  lời mẫu tùy chọn (để trống dùng ASR), ngôn ngữ Việt/Anh, tốc độ 0.5–1.5,
+  instruct cho clone, inference steps, CFG, denoise, duration và preprocess/postprocess.
+  Các đặc điểm Voice Design lấy trực tiếp từ API của OmniVoice.
+- **Xuất video:** dùng lại giọng đã nghe thử nếu cài đặt không đổi. Mỗi lần render
+  tạo thư mục mới `output/studio-<id>` để không dùng nhầm clip/giọng cũ.
+  FFmpeg/ffprobe được cài cục bộ qua npm; có thể ghi đè bằng `FFMPEG_DIR`.
+  HyperFrames/Chromium cần tải trong lần render đầu, vì vậy cần Internet.
+- **Lưu trữ:** bản nháp lưu trong trình duyệt. Ảnh, audio nghe thử, tiến độ và
+  cấu hình AI lưu ở `output/studio-data`. API key nằm trong cấu hình local này,
+  không trả về cho trình duyệt và không đưa vào Git. Không chia sẻ thư mục đó.
+  Video hoàn tất có trong **Video đã tạo**, kèm MP4, MP3, TXT và JSON để tải.
+
+Studio chỉ lắng nghe trên localhost. Những trang chặn crawl hoặc dựng nội dung
+bằng JavaScript có thể cần bạn dán nội dung và tải ảnh thủ công.
+`npm run news:preview` vẫn mở bộ mẫu cũ; dừng nó trước khi chạy Studio vì cùng cổng 4173.
+
+Tài liệu tích hợp: [Codex non-interactive](https://developers.openai.com/codex/noninteractive/),
+[Chat Completions API](https://platform.openai.com/docs/api-reference/chat/create).
+
 `frame-news` dùng ảnh lớn, thanh nguồn, ngày đăng và tiêu đề. Chọn `theme`:
 `slide` (mặc định), `light`, `dark` hoặc `modern`. Hỗ trợ 9:16, 16:9 và 1:1.
 Cả hook, body và outro dùng chung phong cách; các template cũ vẫn chạy được.
@@ -42,6 +83,13 @@ npm run news:preview
 
 Xuất clip mẫu 8 giây có ảnh minh họa, không cần TTS: `npm run news:render`.
 Kết quả: `output/news-preview.mp4` (không có âm thanh).
+
+**Video tiếng Anh:** đặt `voice.language` thành `"English"`, viết tiêu đề,
+tên kênh, nội dung cảnh và credit ảnh bằng tiếng Anh. Các nhãn mặc định trên
+template tin tức tự chuyển sang tiếng Anh. OmniVoice tạo mẫu tại
+`voice/narrator-reference-en.wav` và dùng chung cho toàn bộ video. Nếu bỏ trường
+ngôn ngữ, pipeline vẫn dùng tiếng Việt. Khi đổi ngôn ngữ, dùng thư mục output mới
+để tránh dùng lại clip hình đã render trước đó.
 
 **Một giọng xuyên suốt:** với OmniVoice Gradio, pipeline tạo một mẫu giọng tổng hợp
 và dùng cùng mẫu cho mọi cảnh. Mẫu được lưu tại `voice/narrator-reference.wav`.
@@ -485,3 +533,5 @@ Nếu dự án giúp bạn tiết kiệm thời gian, bạn có thể:
 <sub>Made with ❤️ by <b>AI Coding</b> · <a href="https://aicodingvn.vercel.app/">aicodingvn.vercel.app</a></sub>
 
 </div>
+
+Khi nguồn trả HTTP 401/403 hoặc không cung cấp đủ nội dung, Studio hiển thị hướng dẫn mở bài gốc và cho dán nội dung hoặc nhập file TXT UTF-8 ngay tại bước Bài viết. Studio giữ đúng URL nguồn, không dùng bài cũ cho link mới, và chỉ thay bản nháp khi bấm Dùng nội dung này. Đây là cách nhập nội dung bạn truy cập được; Studio không tự vượt đăng nhập hay giới hạn truy cập của nhà xuất bản.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VoiceSettingsSchema } from "../tts/voice-settings.js";
 
 /**
  * Script schema for the HyperFrames template pipeline. Each scene names a
@@ -17,7 +18,7 @@ export type TplSfxSpecType = z.infer<typeof SfxSpec>;
 const TemplateScene = z.object({
   id: z.string().min(1),
   type: z.enum(["hook", "body", "outro"]),
-  /** Spoken narration (Vietnamese, spelled-out numbers — see skill rules). */
+  /** Spoken narration in voice.language, with numbers written for speech. */
   voiceText: z.string().min(1),
   /** Folder name under templates/, e.g. "frame-bold-poster". */
   templateId: z.string().min(1),
@@ -45,12 +46,12 @@ export const TemplateScriptSchema = z.object({
   }),
   voice: z.object({
     provider: z.literal("omnivoice").default("omnivoice"),
+    language: z.enum(["Vietnamese", "English"]).default("Vietnamese"),
     speed: z.number().min(0.5).max(2.0),
     /** Local reference audio, relative to script.json, to keep one narrator. */
     referenceAudio: z.string().min(1).optional(),
     referenceText: z.string().min(1).optional(),
-  }).refine((v) => !v.referenceAudio || !!v.referenceText, {
-    message: "voice.referenceText is required with voice.referenceAudio",
+    settings: VoiceSettingsSchema.optional(),
   }),
   /** Output aspect for every scene (templates render a matching composition). */
   aspect: z.enum(["9:16", "16:9", "1:1"]).default("9:16"),

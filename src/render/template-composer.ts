@@ -87,9 +87,13 @@ export async function composeTemplate(args: ComposeArgs): Promise<string> {
     log.info(`Compose ${templateId} (${entryFile}) → ${outputPath}`);
 
     await new Promise<void>((resolve, reject) => {
-        const proc = spawn("npx", spawnArgs, {
+        const npmCli = process.env.npm_execpath;
+        const npxCli = npmCli ? join(dirname(npmCli), "npx-cli.js") : "";
+        const direct = existsSync(npxCli);
+        const proc = spawn(direct ? process.execPath : "npx", direct ? [npxCli, ...spawnArgs] : spawnArgs.map(arg => `"${arg.replace(/"/g, "")}"`), {
             stdio: ["ignore", "inherit", "inherit"],
-            shell: true,
+            shell: !direct,
+            windowsHide: true,
         });
         proc.on("close", (code) =>
             code === 0

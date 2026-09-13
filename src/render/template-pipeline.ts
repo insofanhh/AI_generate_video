@@ -55,15 +55,18 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
   const voiceDir = join(outputDir, "voice");
   await mkdir(voiceDir, { recursive: true });
   log.info("  Prepare one shared narrator for all scenes");
+  const referenceName = script.voice.language === "English" ? "narrator-reference-en" : "narrator-reference";
   const referencePath = script.voice.referenceAudio
     ? resolve(outputDir, script.voice.referenceAudio)
-    : join(voiceDir, "narrator-reference.wav");
-  const referenceTextPath = join(voiceDir, "narrator-reference.txt");
-  const referenceText = script.voice.referenceText ?? (
+    : join(voiceDir, `${referenceName}.wav`);
+  const referenceTextPath = join(voiceDir, `${referenceName}.txt`);
+  const referenceText = script.voice.referenceAudio ? (script.voice.referenceText ?? "") : (
     existsSync(referenceTextPath) ? await readFile(referenceTextPath, "utf8") : script.scenes[0].voiceText
   );
   const narratorId = await ttsClient.prepareVoice?.({
     audioPath: referencePath, text: referenceText, speed: script.voice.speed,
+    language: script.voice.language,
+    settings: script.voice.settings,
     explicitReference: !!script.voice.referenceAudio,
   }) ?? "server-default";
   await writeFile(referenceTextPath, referenceText, "utf8");
@@ -76,6 +79,7 @@ export async function runTemplatePipeline(scriptPath: string): Promise<void> {
         const signature = createHash("sha256").update(JSON.stringify({
           version: "shared-narrator-v1", narratorId, text: scene.voiceText,
           endpoint: cfg.omnivoiceEndpoint, speed: script.voice.speed,
+          language: script.voice.language,
         })).digest("hex");
         const cachedSignature = existsSync(cachePath) ? await readFile(cachePath, "utf8") : "";
         if (existsSync(out) && cachedSignature === signature) {

@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { OmniVoiceClient } from "./omnivoice-client.js";
+import { VoiceSettingsSchema } from "./voice-settings.js";
 
 const endpoint = "http://omnivoice.test";
 const dirs: string[] = [];
@@ -25,6 +26,42 @@ function responseMock(api: string, id: string) {
 }
 
 describe("OmniVoice shared narrator", () => {
+  it("passes editable synthesis settings and permits automatic reference transcription", async () => {
+    const options = { ...await fixture(), text: "", speed: 1.2, settings: VoiceSettingsSchema.parse({ instruct: "Calm", steps: 16, guidance: 1.5, duration: 8, denoise: false, preprocess: false, postprocess: false }) };
+    prepareMocks();
+    const client = new OmniVoiceClient({ endpoint }); await client.prepareVoice(options);
+    nock(endpoint).post("/gradio_api/call/_clone_fn", body => {
+      expect(body.data).toEqual(["Bản tin.", "Vietnamese", { path: "/tmp/fixed-reference.wav", meta: { _type: "gradio.FileData" } }, "", "Calm", 16, 1.5, false, 1.2, 8, false, false]);
+      return true;
+    }).reply(200, { event_id: "settings" });
+    responseMock("_clone_fn", "settings");
+    await client.generate("Bản tin.", join(options.dir, "settings.mp3"));
+    expect(nock.isDone()).toBe(true);
+  });
+  it("designs an English reference and keeps English and the same speaker across scenes", async () => {
+    const options = { ...await fixture(), language: "English" as const, text: "This is your world news briefing.", explicitReference: false };
+    options.audioPath = join(options.dir, "english-reference.wav");
+    prepareMocks();
+    nock(endpoint).post("/gradio_api/call/_design_fn", body => {
+      expect(body.data[1]).toBe("English");
+      return true;
+    }).reply(200, { event_id: "english-reference" });
+    responseMock("_design_fn", "english-reference");
+    const client = new OmniVoiceClient({ endpoint });
+    await client.prepareVoice(options);
+    for (const id of ["english-intro", "english-outro"]) {
+      nock(endpoint).post("/gradio_api/call/_clone_fn", body => {
+        expect(body.data[1]).toBe("English");
+        expect(body.data[2].path).toBe("/tmp/fixed-reference.wav");
+        expect(body.data[3]).toBe(options.text);
+        return true;
+      }).reply(200, { event_id: id });
+      responseMock("_clone_fn", id);
+      await client.generate("Here is the news.", join(options.dir, `${id}.mp3`));
+    }
+    expect(nock.isDone()).toBe(true);
+  });
+
   it("uses the same uploaded voice and transcript for every scene, with no voice-design requests", async () => {
     const options = await fixture(); prepareMocks();
     const client = new OmniVoiceClient({ endpoint });

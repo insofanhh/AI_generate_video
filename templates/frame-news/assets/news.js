@@ -5,6 +5,9 @@
   // Query options make the shipped gallery usable without the render runtime.
   const params = new URLSearchParams(location.search);
   const v = { ...defaults, ...(injected || {}) };
+  const english = v.locale === 'en';
+  document.documentElement.lang = english ? 'en' : 'vi';
+  document.title = v.headline || (english ? 'News bulletin' : 'Bản tin thời sự');
   if (!injected && params.has('theme')) v.theme = params.get('theme');
   root.dataset.theme = ['slide', 'light', 'dark', 'modern'].includes(v.theme) ? v.theme : 'slide';
   root.innerHTML = `
@@ -14,14 +17,16 @@
     <article class="story"><div class="dateline"></div><h1 class="headline"></h1><p class="summary"></p></article>
     <p class="caption" hidden></p><footer class="footer"><span class="section"></span><span class="footer-category"></span></footer><div class="progress"></div>`;
   const set = (selector, value) => { root.querySelector(selector).textContent = value || ''; };
+  set('.edition', english ? 'News & perspectives' : 'Thông tin & cuộc sống');
+  set('.placeholder span', english ? 'No source image' : 'Chưa có ảnh nguồn');
   set('.channel', v.channel); set('.category', v.category); set('.footer-category', v.category);
   set('.headline', v.headline); set('.summary', v.summary); set('.section', v.section);
-  set('.dateline', v.date ? `Ngày đăng: ${v.date}` : 'Thông tin tổng hợp');
+  set('.dateline', v.date ? `${english ? 'Published' : 'Ngày đăng'}: ${v.date}` : (english ? 'News briefing' : 'Thông tin tổng hợp'));
   set('.caption', v.caption); root.querySelector('.caption').hidden = !v.caption;
   let images = Array.isArray(v.images) ? v.images.slice(0, 6) : [];
   if (!injected && params.get('demo') === '1') {
-    images = [{ src: new URL('city-demo.svg', document.currentScript.src).href, credit: 'Đồ họa minh họa · Không phải ảnh sự kiện' }];
-    set('.image-label', 'MẪU GIAO DIỆN'); root.querySelector('.image-label').hidden = false;
+    images = [{ src: new URL('city-demo.svg', document.currentScript.src).href, credit: english ? 'Illustration · Not an event photograph' : 'Đồ họa minh họa · Không phải ảnh sự kiện' }];
+    set('.image-label', english ? 'TEMPLATE PREVIEW' : 'MẪU GIAO DIỆN'); root.querySelector('.image-label').hidden = false;
   }
   const media = root.querySelector('.media');
   const photos = images.map((item) => {
@@ -37,7 +42,11 @@
     const index = Math.min(images.length - 1, Math.floor(Math.min(time, 7.999) / 8 * images.length));
     photos.forEach((photo, i) => photo.classList.toggle('active', i === index && photo.dataset.failed !== 'true'));
     const failed = index >= 0 && photos[index]?.dataset.failed === 'true';
-    set('.credit', failed ? 'Không tải được ảnh nguồn' : (images[index]?.credit || (v.source ? `Nguồn: ${v.source}` : 'Chưa cung cấp nguồn ảnh')));
+    set('.credit', failed
+      ? (english ? 'Source image unavailable' : 'Không tải được ảnh nguồn')
+      : (images[index]?.credit || (v.source
+        ? `${english ? 'Source' : 'Nguồn'}: ${v.source}`
+        : (english ? 'Image source not provided' : 'Chưa cung cấp nguồn ảnh'))));
     set('.image-count', images.length ? `${String(index + 1).padStart(2, '0')} / ${String(images.length).padStart(2, '0')}` : '');
   }
   updateImage(0);

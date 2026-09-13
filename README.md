@@ -32,6 +32,24 @@ One command · zero editing · deterministic renders.</p>
 
 ## 📰 News templates (default)
 
+### Newsroom Studio
+
+Run `npm install` and `npm run dev`, then open **http://127.0.0.1:4173**.
+The local editor supports article URL extraction (with manual text fallback),
+AI script generation, editable scenes, crawled/uploaded images, OmniVoice
+Design/Clone controls, voice preview reuse, render progress, and MP4/MP3/TXT/JSON downloads.
+Drafts persist in the browser; assets, jobs, and local AI configuration live in
+the ignored `output/studio-data` folder. Each render gets a new output folder.
+
+Codex CLI authentication is used by default (`codex login`; optionally set
+`CODEX_BIN`). **Cấu hình AI** switches to an OpenAI-compatible Chat Completions
+endpoint with editable base URL, model and API key (JSON object output required).
+Keys stay on the local server. Point `OMNIVOICE_ENDPOINT` to your Gradio service.
+FFmpeg and ffprobe are bundled via npm; `FFMPEG_DIR` overrides their location.
+The first HyperFrames render may download Chromium. The gallery command
+`npm run news:preview` shares port 4173, so stop it before starting Studio.
+See [Vietnamese instructions](README.vi.md) for the complete workflow.
+
 The default `frame-news` composition uses prominent source images, a source strip,
 publication date, headline, summary and optional scene caption. Choose `slide`
 (default), `light`, `dark` or `modern`; native 9:16, 16:9 and 1:1 layouts are included.
@@ -43,6 +61,13 @@ npm run news:preview
 
 Render an 8-second visual sample without TTS: `npm run news:render`.
 Output: `output/news-preview.mp4` (silent).
+
+**English videos:** set `voice.language` to `"English"` and write the title,
+channel, scene text and image credits in English. The news template switches its
+built-in labels to English automatically. OmniVoice designs an English reference
+at `voice/narrator-reference-en.wav` and reuses it for all scenes. Omit the language
+field for the existing Vietnamese default. Use a new output directory when
+changing the language so previously rendered visual clips are not reused.
 
 **One narrator throughout:** with OmniVoice Gradio, the pipeline designs one
 synthetic reference and clones it for every scene. The reference is saved as

@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { basename } from "node:path";
 import { createHash } from "node:crypto";
 import type { TtsClient } from "./tts-client.js";
+import { VoiceSettingsSchema, type VoiceSettings } from "./voice-settings.js";
 
 export interface OmniVoiceOpts {
   endpoint: string; // e.g. "http://127.0.0.1:8123"
@@ -17,10 +18,14 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export class OmniVoiceClient implements TtsClient {
   private reference?: { path: string; text: string };
   private speed = 1;
+  private settings = VoiceSettingsSchema.parse({});
+  private language: "Vietnamese" | "English" = "Vietnamese";
   constructor(private cfg: OmniVoiceOpts) {}
 
-  async prepareVoice(options: { audioPath: string; text: string; speed: number; explicitReference: boolean }): Promise<string> {
+  async prepareVoice(options: { audioPath: string; text: string; speed: number; language?: "Vietnamese" | "English"; explicitReference: boolean; settings?: VoiceSettings }): Promise<string> {
     this.speed = options.speed;
+    this.settings = VoiceSettingsSchema.parse(options.settings ?? {});
+    this.language = options.language ?? "Vietnamese";
     let info;
     try {
       info = await axios.get(`${this.cfg.endpoint}/gradio_api/info`, { timeout: 10000 });
@@ -47,7 +52,7 @@ export class OmniVoiceClient implements TtsClient {
     const path = uploaded.data?.[0];
     if (typeof path !== "string" || !path) throw new Error("OmniVoice did not return an uploaded voice reference.");
     this.reference = { path, text: options.text };
-    return createHash("sha256").update(bytes).update(options.text).update(String(this.speed)).digest("hex");
+    return createHash("sha256").update(bytes).update(options.text).update(String(this.speed)).update(this.language).update(JSON.stringify(this.settings)).digest("hex");
   }
 
   async generate(text: string, audioOutPath: string, _srtOutPath?: string): Promise<void> {
@@ -92,27 +97,28 @@ export class OmniVoiceClient implements TtsClient {
   }
 
   private async generateViaGradio(text: string, audioOutPath: string): Promise<void> {
+    const s = this.settings;
     const apiName = this.reference ? "_clone_fn" : "_design_fn";
     const data = this.reference ? [
-      text, "Vietnamese",
+      text, this.language,
       { path: this.reference.path, meta: { _type: "gradio.FileData" } },
-      this.reference.text, "", 32, 2, true, this.speed, null, true, true,
+      this.reference.text, s.instruct, s.steps, s.guidance, s.denoise, this.speed, s.duration, s.preprocess, s.postprocess,
     ] : [
         text,         // Text to synthesize
-        "Vietnamese", // Language
-        32,           // Inference steps
-        2,            // Guidance Scale (CFG)
-        true,         // Denoise
+        this.language, // Language
+        s.steps,
+        s.guidance,
+        s.denoise,
         this.speed,   // Speed
-        null,         // Duration
-        true,         // Preprocess Prompt
-        true,         // Postprocess Output
-        "Auto",       // Gender
-        "Auto",       // Age
-        "Auto",       // Pitch
-        "Auto",       // Style
-        "Auto",       // Accent
-        "Auto"        // Dialect
+        s.duration,
+        s.preprocess,
+        s.postprocess,
+        s.gender,
+        s.age,
+        s.pitch,
+        s.style,
+        s.accent,
+        s.dialect
       ];
     const callRes = await axios.post(`${this.cfg.endpoint}/gradio_api/call/${apiName}`, { data }, { timeout: 30000 });
 

@@ -7,6 +7,16 @@ import { readFile } from "node:fs/promises";
 afterEach(() => nock.cleanAll());
 
 describe("news inputs", () => {
+  it("uses English template labels when the narrator language is English", async () => {
+    const raw = JSON.parse(await readFile("examples/news/script.json", "utf8"));
+    expect(TemplateScriptSchema.parse(raw).voice.language).toBe("Vietnamese");
+    raw.voice.language = "English";
+    const script = TemplateScriptSchema.parse(raw);
+    const scene = { ...script.scenes[0], inputs: {} };
+    expect(resolveNewsInputs(script, scene, 0)).toMatchObject({ locale: "en", category: "World news", section: "News / 01" });
+    expect(resolveNewsInputs(script, { ...scene, type: "outro" }, 2).section).toBe("End of bulletin");
+  });
+
   it("validates the shipped example and resolves local images beside the script", async () => {
     const script = TemplateScriptSchema.parse(JSON.parse(await readFile("examples/news/script.json", "utf8")));
     const inputs = resolveNewsInputs(script, script.scenes[0], 0);

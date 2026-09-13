@@ -8,7 +8,9 @@ export interface TtsClient {
     audioPath: string;
     text: string;
     speed: number;
+    language?: "Vietnamese" | "English";
     explicitReference: boolean;
+    settings?: import("./voice-settings.js").VoiceSettings;
   }): Promise<string>;
   /**
    * Generate speech audio for `text` and write to `audioOutPath` (mp3 or wav).
